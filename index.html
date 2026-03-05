@@ -3,295 +3,433 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>九章算术社 - 猜数字游戏</title>
+    <title>九章算术社・国际数学节猜数字游戏</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
-            font-family: Arial, sans-serif;
+            font-family: "Microsoft Yahei", sans-serif;
         }
 
         body {
-            background: #f5f5f5;
-            padding: 20px;
-            max-width: 400px;
-            margin: 0 auto;
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
         }
 
         .container {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        /* logo样式 */
-        .logo-box {
-            text-align: center;
-            margin-bottom: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .logo {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        /* 标题样式 */
-        h1 {
             text-align: center;
-            color: #333;
-            margin: 10px 0;
-            font-size: 20px;
+            margin-bottom: 20px;
         }
 
-        /* 规则样式 */
-        .rules {
-            background: #f8f9fa;
-            padding: 12px;
+        .logo img {
+            max-width: 120px;
+            height: auto;
+            /* 增加logo加载失败的备用样式 */
             border-radius: 8px;
-            margin: 15px 0;
-            font-size: 14px;
-            line-height: 1.5;
-            color: #555;
+            background-color: #fff;
+            padding: 10px;
         }
 
-        .rules h3 {
-            margin: 0 0 8px 0;
-            font-size: 15px;
-            color: #333;
+        .page {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        h1, h2 {
             text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
         }
 
-        .rules ul {
-            margin: 0;
-            padding-left: 20px;
+        .form-group {
+            margin-bottom: 15px;
         }
 
-        .rules li {
-            margin: 4px 0;
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
         }
 
-        /* 原有样式保留并优化 */
-        .status {
-            text-align: center;
-            margin: 10px 0;
-            font-size: 16px;
-            color: #666
-        }
-
-        .input-box {
+        input {
             width: 100%;
             padding: 12px;
-            font-size: 18px;
-            text-align: center;
-            letter-spacing: 4px;
             border: 1px solid #ddd;
-            border-radius: 8px;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
             outline: none;
-            margin: 10px 0
         }
 
         .btn {
-            width: 100%;
-            padding: 12px;
-            background: #07c;
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 16px;
-            margin-top: 10px;
             cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 10px;
         }
 
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
+        .btn:hover {
+            background-color: #2980b9;
         }
 
-        /* 新增：重新开始按钮样式 */
-        .restart-btn {
-            background: #28a745;
-            /* 绿色，与提交按钮区分 */
+        .btn-secondary {
+            background-color: #95a5a6;
         }
 
-        .log {
-            margin-top: 20px;
-            line-height: 1.6
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
         }
 
-        .item {
-            padding: 6px 0;
-            border-bottom: 1px solid #eee
+        .rules {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-        .win {
-            color: green;
-            font-weight: bold
+        .rules h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
         }
 
-        .lose {
-            color: red;
-            font-weight: bold
+        .rules ul {
+            padding-left: 20px;
+        }
+
+        .history {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .history-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .result {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #27ae60;
+        }
+
+        .pass-info {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .pass-info p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .pass-info .score {
+            font-size: 24px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .tip {
+            text-align: center;
+            color: #e67e22;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
-        <!-- 俱乐部logo -->
-        <div class="logo-box">
-            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/e62e55f5c65e4656925b32eeb9e273b0.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=2026022815000017C424900EB8120A68F8&rrcfp=dafada99&x-expires=2088486000&x-signature=0jVvqwK1hbVTns5DzOPRy0bHKbc%3D"
-                alt="九章算术社logo" class="logo">
+        <!-- 登录页 -->
+        <div id="loginPage" class="page active">
+            <div class="logo">
+                <!-- 替换为你提供的logo地址 -->
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/81b2f7ca2cc041ec99467fc52bba23bd.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603012106241219EAF375E40799C533&rrcfp=dafada99&x-expires=2088594384&x-signature=Zk13Tbes3vg%2FTLtG%2FZP4z1OYQXk%3D" 
+                     alt="九章算术社logo" 
+                     onerror="this.src='https://via.placeholder.com/120x120?text=九章算术社'">
+            </div>
+            <h1>国际数学节·猜数字游戏</h1>
+            <div class="form-group">
+                <label for="name">姓名</label>
+                <input type="text" id="name" placeholder="请输入您的姓名" required>
+            </div>
+            <div class="form-group">
+                <label for="studentId">学号</label>
+                <input type="text" id="studentId" placeholder="请输入您的学号" required>
+            </div>
+            <button class="btn" id="startGameBtn">进入游戏</button>
         </div>
-        <!-- 俱乐部标题 -->
-        <h1>九章算术社 数学研究俱乐部</h1>
-        <!-- 游戏规则 -->
-        <div class="rules">
-            <h3>猜数字游戏规则</h3>
-            <ul>
-                <li>1. 系统随机生成一个不重复的4位数字（如1234）。</li>
-                <li>2. 玩家输入一个4位各不相同的数字作为猜测（如5678）。</li>
-                <li>3. 反馈提示：A表示数字和位置都正确；B表示数字正确但位置不对（例：答案1234，猜测1356，反馈1A1B）。</li>
-                <li>4. 玩家最多只能尝试7次，第7次输入错误则游戏失败并公布答案。</li>
-            </ul>
+
+        <!-- 游戏页 -->
+        <div id="gamePage" class="page">
+            <div class="logo">
+                <!-- 替换为你提供的logo地址 -->
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/81b2f7ca2cc041ec99467fc52bba23bd.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603012106241219EAF375E40799C533&rrcfp=dafada99&x-expires=2088594384&x-signature=Zk13Tbes3vg%2FTLtG%2FZP4z1OYQXk%3D" 
+                     alt="九章算术社logo" 
+                     onerror="this.src='https://via.placeholder.com/120x120?text=九章算术社'">
+            </div>
+            <h2>猜数字游戏</h2>
+            <div class="rules">
+                <h3>游戏规则</h3>
+                <ul>
+                    <li>系统随机生成4位不重复数字</li> <!-- 去掉了“首位允许为0” -->
+                    <li>输入4位不重复数字进行猜测</li>
+                    <li>A = 数字和位置均正确，B = 数字正确但位置错误</li>
+                    <li>7次以内答对得3分，7次及以上答对得2分</li>
+                </ul>
+            </div>
+            <div class="form-group">
+                <label for="guessInput">输入4位数字</label>
+                <input type="text" id="guessInput" placeholder="请输入4位不重复数字" maxlength="4">
+            </div>
+            <button class="btn" id="submitGuessBtn">提交猜测</button>
+            <div class="result" id="result"></div>
+            <div class="history" id="history">
+                <h3>猜测历史</h3>
+                <div id="historyList"></div>
+            </div>
+            <button class="btn btn-secondary" id="backToLoginBtn">返回登录</button>
         </div>
-        <!-- 游戏核心区域 -->
-        <div class="status">剩余次数：<span id="left">7</span></div>
-        <input type="text" class="input-box" id="guess" maxlength="4" placeholder="输入4位不重复数字">
-        <button class="btn" id="submit">猜</button>
-        <!-- 新增：重新开始按钮 -->
-        <button class="btn restart-btn" id="restart">重新开始游戏</button>
-        <div class="log" id="log"></div>
+
+        <!-- 通关页 -->
+        <div id="passPage" class="page">
+            <div class="logo">
+                <!-- 替换为你提供的logo地址 -->
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/81b2f7ca2cc041ec99467fc52bba23bd.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603012106241219EAF375E40799C533&rrcfp=dafada99&x-expires=2088594384&x-signature=Zk13Tbes3vg%2FTLtG%2FZP4z1OYQXk%3D" 
+                     alt="九章算术社logo" 
+                     onerror="this.src='https://via.placeholder.com/120x120?text=九章算术社'">
+            </div>
+            <h2>恭喜通关！</h2>
+            <div class="pass-info">
+                <p id="passName"></p>
+                <p id="passStudentId"></p>
+                <p id="passAttempts"></p>
+                <p class="score" id="passScore"></p>
+                <p>九章算术社 出品</p>
+            </div>
+            <div class="tip">请玩家截屏留存此页面作为积分凭证</div>
+            <button class="btn" id="restartBtn">重新挑战</button>
+            <button class="btn btn-secondary" id="passBackToLoginBtn">返回登录</button>
+        </div>
     </div>
 
     <script>
+        // 全局变量
+        let targetNumber = '';
+        let attempts = 0;
+        let history = [];
+        let playerName = '';
+        let studentId = '';
+
         // 生成4位不重复数字
-        function generateAnswer() {
-            let digits = []
+        function generateTargetNumber() {
+            let digits = [];
             while (digits.length < 4) {
-                let n = Math.floor(Math.random() * 10).toString()
-                if (!digits.includes(n)) digits.push(n)
-            }
-            return digits
-        }
-
-        // 游戏状态变量
-        let answer = generateAnswer()
-        const maxTry = 7
-        let tryCount = 0
-        let gameOver = false
-
-        const $left = document.getElementById('left')
-        const $guess = document.getElementById('guess')
-        const $submit = document.getElementById('submit')
-        const $restart = document.getElementById('restart') // 新增
-        const $log = document.getElementById('log')
-
-        // 检查猜测结果的函数
-        function check(guess, ans) {
-            let a = 0, b = 0
-            let g = guess.split('')
-            // 先算A（数字+位置都对）
-            for (let i = 0; i < 4; i++) {
-                if (g[i] === ans[i]) {
-                    a++
-                    g[i] = 'x' // 标记已算过，避免重复计算
+                const num = Math.floor(Math.random() * 10);
+                if (!digits.includes(num)) {
+                    digits.push(num);
                 }
             }
-            // 再算B（数字对但位置错）
+            return digits.join('');
+        }
+
+        // 验证输入是否合法
+        function validateInput(input) {
+            if (input.length !== 4) return false;
+            if (!/^\d+$/.test(input)) return false;
+            const uniqueDigits = new Set(input.split(''));
+            return uniqueDigits.size === 4;
+        }
+
+        // 计算A和B的数量
+        function calculateAB(guess, target) {
+            let a = 0;
+            let b = 0;
+            const targetArr = target.split('');
+            const guessArr = guess.split('');
+
+            // 先计算A
             for (let i = 0; i < 4; i++) {
-                if (g[i] !== 'x' && ans.includes(g[i])) {
-                    b++
+                if (guessArr[i] === targetArr[i]) {
+                    a++;
+                    targetArr[i] = guessArr[i] = null;
                 }
             }
-            return { a, b }
+
+            // 再计算B
+            for (let i = 0; i < 4; i++) {
+                if (guessArr[i] && targetArr.includes(guessArr[i])) {
+                    b++;
+                    targetArr[targetArr.indexOf(guessArr[i])] = null;
+                }
+            }
+
+            return { a, b };
         }
 
-        // 在日志中显示一行记录
-        function logHtml(text, className = '') {
-            let div = document.createElement('div')
-            div.className = 'item ' + className
-            div.innerText = text
-            $log.prepend(div) // 新记录放在最上面
+        // 渲染历史记录
+        function renderHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = '';
+            history.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <span>第${index + 1}次：</span>
+                    <span>${item.guess}</span>
+                    <span> → ${item.a}A${item.b}B</span>
+                `;
+                historyList.appendChild(div);
+            });
+            // 自动滚动到底部
+            historyList.scrollTop = historyList.scrollHeight;
         }
 
-        // 核心功能：处理猜测
-        $submit.onclick = function () {
-            if (gameOver) {
-                alert('游戏已结束，请点击“重新开始游戏”。')
-                return
-            }
-
-            let val = $guess.value.trim()
-            // 验证是否为4位数字
-            if (!/^\d{4}$/.test(val)) {
-                alert('请输入4位数字！')
-                return
-            }
-            // 验证数字是否重复
-            if (new Set(val).size !== 4) {
-                alert('4位数字不能重复！')
-                return
-            }
-
-            tryCount++
-            let res = check(val, answer)
-            let msg = `第${tryCount}次：${val} → ${res.a}A${res.b}B`
-
-            // 猜对的情况
-            if (res.a === 4) {
-                msg += ' ✅ 恭喜猜对！'
-                logHtml(msg, 'win')
-                gameOver = true
-                $submit.disabled = true
-                $guess.disabled = true
-                $guess.placeholder = '游戏结束，你赢了！'
-                return
-            }
-
-            logHtml(msg)
-            $guess.value = ''
-            $guess.focus() // 猜错后自动聚焦到输入框
-            $left.textContent = maxTry - tryCount
-
-            // 次数用完失败的情况
-            if (tryCount >= maxTry) {
-                let failMsg = `❌ 游戏结束！正确答案是：${answer.join('')}`
-                logHtml(failMsg, 'lose')
-                gameOver = true
-                $submit.disabled = true
-                $guess.disabled = true
-                $guess.placeholder = '游戏结束，请重新开始。'
-            }
+        // 切换页面
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            document.getElementById(pageId).classList.add('active');
         }
 
-        // 新增：重新开始游戏的功能
-        $restart.onclick = function () {
-            // 1. 生成新的答案
-            answer = generateAnswer()
-            // 2. 重置计数器和状态
-            tryCount = 0
-            gameOver = false
-            // 3. 更新界面显示
-            $left.textContent = maxTry
-            $guess.value = ''
-            $guess.disabled = false
-            $guess.placeholder = '输入4位不重复数字'
-            $guess.focus()
-            $submit.disabled = false
-            // 4. 清空历史记录
-            $log.innerHTML = ''
-            // 5. 可选：在控制台输出新答案便于测试（正式发布可删除）
-            console.log('新游戏开始，答案是：', answer.join(''))
+        // 初始化游戏
+        function initGame() {
+            targetNumber = generateTargetNumber();
+            attempts = 0;
+            history = [];
+            document.getElementById('guessInput').value = '';
+            document.getElementById('result').textContent = '';
+            document.getElementById('historyList').innerHTML = '';
         }
 
-        // 添加键盘回车支持
-        $guess.addEventListener('keypress', function (e) {
+        // 登录按钮事件
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            const name = document.getElementById('name').value.trim();
+            const id = document.getElementById('studentId').value.trim();
+
+            if (!name || !id) {
+                alert('请输入姓名和学号！');
+                return;
+            }
+
+            playerName = name;
+            studentId = id;
+            initGame();
+            switchPage('gamePage');
+        });
+
+        // 提交猜测按钮事件
+        document.getElementById('submitGuessBtn').addEventListener('click', () => {
+            const guess = document.getElementById('guessInput').value.trim();
+
+            if (!validateInput(guess)) {
+                alert('请输入4位不重复的数字！');
+                return;
+            }
+
+            attempts++;
+            const { a, b } = calculateAB(guess, targetNumber);
+            history.push({ guess, a, b });
+            renderHistory();
+
+            if (a === 4) {
+                // 通关
+                const score = attempts < 7 ? 3 : 2;
+                document.getElementById('passName').textContent = `玩家：${playerName}`;
+                document.getElementById('passStudentId').textContent = `学号：${studentId}`;
+                document.getElementById('passAttempts').textContent = `猜测次数：${attempts}次`;
+                document.getElementById('passScore').textContent = `获得积分：${score}分`;
+                switchPage('passPage');
+            } else {
+                document.getElementById('result').textContent = `${a}A${b}B`;
+                document.getElementById('guessInput').value = '';
+            }
+        });
+
+        // 返回登录按钮事件（游戏页）
+        document.getElementById('backToLoginBtn').addEventListener('click', () => {
+            document.getElementById('name').value = '';
+            document.getElementById('studentId').value = '';
+            switchPage('loginPage');
+        });
+
+        // 重新挑战按钮事件
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            initGame();
+            switchPage('gamePage');
+        });
+
+        // 返回登录按钮事件（通关页）
+        document.getElementById('passBackToLoginBtn').addEventListener('click', () => {
+            document.getElementById('name').value = '';
+            document.getElementById('studentId').value = '';
+            switchPage('loginPage');
+        });
+
+        // 回车提交猜测
+        document.getElementById('guessInput').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                $submit.click()
+                document.getElementById('submitGuessBtn').click();
             }
-        })
+        });
     </script>
 </body>
 </html>
