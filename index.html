@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九章算术社 - 猜数字游戏</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* logo样式 */
+        .logo-box {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .logo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        /* 标题样式 */
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 10px 0;
+            font-size: 20px;
+        }
+
+        /* 规则样式 */
+        .rules {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #555;
+        }
+
+        .rules h3 {
+            margin: 0 0 8px 0;
+            font-size: 15px;
+            color: #333;
+            text-align: center;
+        }
+
+        .rules ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .rules li {
+            margin: 4px 0;
+        }
+
+        /* 原有样式保留并优化 */
+        .status {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 16px;
+            color: #666
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            text-align: center;
+            letter-spacing: 4px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            margin: 10px 0
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #07c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 新增：重新开始按钮样式 */
+        .restart-btn {
+            background: #28a745;
+            /* 绿色，与提交按钮区分 */
+        }
+
+        .log {
+            margin-top: 20px;
+            line-height: 1.6
+        }
+
+        .item {
+            padding: 6px 0;
+            border-bottom: 1px solid #eee
+        }
+
+        .win {
+            color: green;
+            font-weight: bold
+        }
+
+        .lose {
+            color: red;
+            font-weight: bold
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- 俱乐部logo -->
+        <div class="logo-box">
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/e62e55f5c65e4656925b32eeb9e273b0.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=2026022815000017C424900EB8120A68F8&rrcfp=dafada99&x-expires=2088486000&x-signature=0jVvqwK1hbVTns5DzOPRy0bHKbc%3D"
+                alt="九章算术社logo" class="logo">
+        </div>
+        <!-- 俱乐部标题 -->
+        <h1>九章算术社 数学研究俱乐部</h1>
+        <!-- 游戏规则 -->
+        <div class="rules">
+            <h3>猜数字游戏规则</h3>
+            <ul>
+                <li>1. 系统随机生成一个不重复的4位数字（如1234）。</li>
+                <li>2. 玩家输入一个4位各不相同的数字作为猜测（如5678）。</li>
+                <li>3. 反馈提示：A表示数字和位置都正确；B表示数字正确但位置不对（例：答案1234，猜测1356，反馈1A1B）。</li>
+                <li>4. 玩家最多只能尝试7次，第7次输入错误则游戏失败并公布答案。</li>
+            </ul>
+        </div>
+        <!-- 游戏核心区域 -->
+        <div class="status">剩余次数：<span id="left">7</span></div>
+        <input type="text" class="input-box" id="guess" maxlength="4" placeholder="输入4位不重复数字">
+        <button class="btn" id="submit">猜</button>
+        <!-- 新增：重新开始按钮 -->
+        <button class="btn restart-btn" id="restart">重新开始游戏</button>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        // 生成4位不重复数字
+        function generateAnswer() {
+            let digits = []
+            while (digits.length < 4) {
+                let n = Math.floor(Math.random() * 10).toString()
+                if (!digits.includes(n)) digits.push(n)
+            }
+            return digits
+        }
+
+        // 游戏状态变量
+        let answer = generateAnswer()
+        const maxTry = 7
+        let tryCount = 0
+        let gameOver = false
+
+        const $left = document.getElementById('left')
+        const $guess = document.getElementById('guess')
+        const $submit = document.getElementById('submit')
+        const $restart = document.getElementById('restart') // 新增
+        const $log = document.getElementById('log')
+
+        // 检查猜测结果的函数
+        function check(guess, ans) {
+            let a = 0, b = 0
+            let g = guess.split('')
+            // 先算A（数字+位置都对）
+            for (let i = 0; i < 4; i++) {
+                if (g[i] === ans[i]) {
+                    a++
+                    g[i] = 'x' // 标记已算过，避免重复计算
+                }
+            }
+            // 再算B（数字对但位置错）
+            for (let i = 0; i < 4; i++) {
+                if (g[i] !== 'x' && ans.includes(g[i])) {
+                    b++
+                }
+            }
+            return { a, b }
+        }
+
+        // 在日志中显示一行记录
+        function logHtml(text, className = '') {
+            let div = document.createElement('div')
+            div.className = 'item ' + className
+            div.innerText = text
+            $log.prepend(div) // 新记录放在最上面
+        }
+
+        // 核心功能：处理猜测
+        $submit.onclick = function () {
+            if (gameOver) {
+                alert('游戏已结束，请点击“重新开始游戏”。')
+                return
+            }
+
+            let val = $guess.value.trim()
+            // 验证是否为4位数字
+            if (!/^\d{4}$/.test(val)) {
+                alert('请输入4位数字！')
+                return
+            }
+            // 验证数字是否重复
+            if (new Set(val).size !== 4) {
+                alert('4位数字不能重复！')
+                return
+            }
+
+            tryCount++
+            let res = check(val, answer)
+            let msg = `第${tryCount}次：${val} → ${res.a}A${res.b}B`
+
+            // 猜对的情况
+            if (res.a === 4) {
+                msg += ' ✅ 恭喜猜对！'
+                logHtml(msg, 'win')
+                gameOver = true
+                $submit.disabled = true
+                $guess.disabled = true
+                $guess.placeholder = '游戏结束，你赢了！'
+                return
+            }
+
+            logHtml(msg)
+            $guess.value = ''
+            $guess.focus() // 猜错后自动聚焦到输入框
+            $left.textContent = maxTry - tryCount
+
+            // 次数用完失败的情况
+            if (tryCount >= maxTry) {
+                let failMsg = `❌ 游戏结束！正确答案是：${answer.join('')}`
+                logHtml(failMsg, 'lose')
+                gameOver = true
+                $submit.disabled = true
+                $guess.disabled = true
+                $guess.placeholder = '游戏结束，请重新开始。'
+            }
+        }
+
+        // 新增：重新开始游戏的功能
+        $restart.onclick = function () {
+            // 1. 生成新的答案
+            answer = generateAnswer()
+            // 2. 重置计数器和状态
+            tryCount = 0
+            gameOver = false
+            // 3. 更新界面显示
+            $left.textContent = maxTry
+            $guess.value = ''
+            $guess.disabled = false
+            $guess.placeholder = '输入4位不重复数字'
+            $guess.focus()
+            $submit.disabled = false
+            // 4. 清空历史记录
+            $log.innerHTML = ''
+            // 5. 可选：在控制台输出新答案便于测试（正式发布可删除）
+            console.log('新游戏开始，答案是：', answer.join(''))
+        }
+
+        // 添加键盘回车支持
+        $guess.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                $submit.click()
+            }
+        })
+    </script>
+</body>
+</html>
