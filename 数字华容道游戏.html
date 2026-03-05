@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九章算术社・数字华容道游戏</title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            max-width: 120px;
+            height: auto;
+            border-radius: 8px;
+            background-color: #fff;
+            padding: 10px;
+        }
+
+        .page {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .page.active {
+            display: flex;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+
+        .btn:hover {
+            background-color: #2980b9;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+        }
+
+        .rules {
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .rules h3 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .rules ul {
+            padding-left: 20px;
+        }
+
+        .timer {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 15px 0;
+        }
+
+        .step-count {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 15px;
+        }
+
+        /* 华容道网格样式 */
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            max-width: 320px;
+            margin: 0 auto 20px;
+            background-color: #2c3e50;
+            padding: 5px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .puzzle-cell {
+            width: 100%;
+            aspect-ratio: 1/1;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #3498db;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .puzzle-cell.empty {
+            background-color: #f5f7fa;
+            cursor: default;
+        }
+
+        .puzzle-cell:not(.empty):hover {
+            background-color: #2980b9;
+            transform: scale(0.98);
+        }
+
+        /* 移动动画 */
+        .puzzle-cell.move {
+            animation: slide 0.15s ease-out;
+        }
+
+        @keyframes slide {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        .result {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 15px 0;
+            color: #e74c3c;
+        }
+
+        .pass-info {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .pass-info p {
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .pass-info .score {
+            font-size: 24px;
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .tip {
+            text-align: center;
+            color: #e67e22;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .puzzle-cell {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 登录页 -->
+        <div id="loginPage" class="page active">
+            <div class="logo">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/81b2f7ca2cc041ec99467fc52bba23bd.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603012106241219EAF375E40799C533&rrcfp=dafada99&x-expires=2088594384&x-signature=Zk13Tbes3vg%2FTLtG%2FZP4z1OYQXk%3D" 
+                     alt="九章算术社logo" 
+                     onerror="this.src='https://via.placeholder.com/120x120?text=九章算术社'">
+            </div>
+            <h1>国际数学节·数字华容道游戏</h1>
+            <div class="form-group">
+                <label for="name">姓名</label>
+                <input type="text" id="name" placeholder="请输入您的姓名" required>
+            </div>
+            <div class="form-group">
+                <label for="studentId">学号</label>
+                <input type="text" id="studentId" placeholder="请输入您的学号" required>
+            </div>
+            <button class="btn" id="startGameBtn">进入游戏</button>
+        </div>
+
+        <!-- 游戏页 -->
+        <div id="gamePage" class="page">
+            <div class="logo">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/81b2f7ca2cc041ec99467fc52bba23bd.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603012106241219EAF375E40799C533&rrcfp=dafada99&x-expires=2088594384&x-signature=Zk13Tbes3vg%2FTLtG%2FZP4z1OYQXk%3D" 
+                     alt="九章算术社logo" 
+                     onerror="this.src='https://via.placeholder.com/120x120?text=九章算术社'">
+            </div>
+            <h2>4×4数字华容道</h2>
+            <div class="rules">
+                <h3>游戏规则</h3>
+                <ul>
+                    <li>4×4网格包含1-15数字滑块和1个空白格，点击空白格相邻的滑块可移动</li>
+                    <li>需在1分钟内将数字按1-15顺序排列（空白格位于右下角）</li>
+                    <li>1分钟内完成得3分，超时完成得2分</li>
+                </ul>
+            </div>
+            
+            <div class="timer" id="timer">剩余时间：01:00</div>
+            <div class="step-count">移动步数：<span id="stepCount">0</span></div>
+            
+            <!-- 4×4华容道网格 -->
+            <div class="puzzle-grid" id="puzzleGrid"></div>
+            
+            <div class="result" id="result"></div>
+            
+            <button class="btn" id="restartPuzzleBtn">重新开始</button>
+            <button class="btn btn-secondary" id="backToLoginBtn">返回登录</button>
+        </div>
+
+        <!-- 通关页 -->
+        <div id="passPage" class="page">
+            <div class="logo">
+                <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/81b2f7ca2cc041ec99467fc52bba23bd.jpg~tplv-a9rns2rl98-image.png?lk3s=8e244e95&rcl=202603012106241219EAF375E40799C533&rrcfp=dafada99&x-expires=2088594384&x-signature=Zk13Tbes3vg%2FTLtG%2FZP4z1OYQXk%3D" 
+                     alt="九章算术社logo" 
+                     onerror="this.src='https://via.placeholder.com/120x120?text=九章算术社'">
+            </div>
+            <h2>恭喜通关！</h2>
+            <div class="pass-info">
+                <p id="passName"></p>
+                <p id="passStudentId"></p>
+                <p id="passTimeUsed"></p>
+                <p id="passStepCount"></p>
+                <p class="score" id="passScore"></p>
+                <p>九章算术社 出品</p>
+            </div>
+            <div class="tip">请玩家截屏留存此页面作为积分凭证</div>
+            <button class="btn" id="restartBtn">重新挑战</button>
+            <button class="btn btn-secondary" id="passBackToLoginBtn">返回登录</button>
+        </div>
+    </div>
+
+    <script>
+        // 全局变量
+        let timerInterval = null;
+        let remainingSeconds = 60; // 调整为1分钟（60秒）
+        let playerName = '';
+        let studentId = '';
+        let isTimeOut = false;
+        let puzzleData = []; // 华容道数据 [行][列]
+        let emptyPos = { row: 3, col: 3 }; // 空白格初始位置（右下角）
+        let stepCount = 0; // 移动步数
+        let isMoving = false; // 防止动画期间重复点击
+
+        // 目标完成状态
+        const TARGET = [
+            [1, 2, 3, 4],
+            [5, 6, 7, 8],
+            [9, 10, 11, 12],
+            [13, 14, 15, 0]
+        ];
+
+        // 格式化时间（分:秒，补零）
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `剩余时间：${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 启动计时器
+        function startTimer() {
+            remainingSeconds = 60;
+            isTimeOut = false;
+            document.getElementById('timer').textContent = formatTime(remainingSeconds);
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                document.getElementById('timer').textContent = formatTime(remainingSeconds);
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    isTimeOut = true;
+                    document.getElementById('result').textContent = '时间已到！仍可完成游戏，得分将为2分';
+                }
+            }, 1000);
+        }
+
+        /**
+         * 核心修复：生成可解的华容道布局
+         * 采用“随机移动法”：从完成状态开始，随机移动100次，确保100%可解
+         */
+        function generateSolvablePuzzle() {
+            // 初始化为完成状态
+            puzzleData = [
+                [1, 2, 3, 4],
+                [5, 6, 7, 8],
+                [9, 10, 11, 12],
+                [13, 14, 15, 0]
+            ];
+            emptyPos = { row: 3, col: 3 };
+
+            // 随机移动N次（这里移动150次，确保打乱程度足够）
+            const moves = ['up', 'down', 'left', 'right'];
+            for (let i = 0; i < 150; i++) {
+                // 随机选择一个方向
+                const randomMove = moves[Math.floor(Math.random() * 4)];
+                // 尝试移动（移动失败则跳过）
+                tryMove(randomMove, true);
+            }
+
+            // 双重保险：如果生成了完成状态，重新生成
+            if (checkSolved()) {
+                generateSolvablePuzzle();
+            }
+        }
+
+        // 尝试向指定方向移动（内部使用，用于随机生成）
+        function tryMove(direction, isGenerating = false) {
+            let newRow = emptyPos.row;
+            let newCol = emptyPos.col;
+
+            switch (direction) {
+                case 'up': newRow--; break;
+                case 'down': newRow++; break;
+                case 'left': newCol--; break;
+                case 'right': newCol++; break;
+            }
+
+            // 检查边界
+            if (newRow < 0 || newRow > 3 || newCol < 0 || newCol > 3) {
+                return false;
+            }
+
+            // 交换位置
+            [puzzleData[emptyPos.row][emptyPos.col], puzzleData[newRow][newCol]] = 
+            [puzzleData[newRow][newCol], puzzleData[emptyPos.row][emptyPos.col]];
+            
+            emptyPos = { row: newRow, col: newCol };
+            
+            // 生成阶段不统计步数
+            if (!isGenerating) {
+                stepCount++;
+            }
+            return true;
+        }
+
+        // 检查是否已完成排序
+        function checkSolved() {
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    if (puzzleData[row][col] !== TARGET[row][col]) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 渲染华容道网格
+        function renderPuzzleGrid() {
+            const gridContainer = document.getElementById('puzzleGrid');
+            gridContainer.innerHTML = '';
+            
+            for (let row = 0; row < 4; row++) {
+                for (let col = 0; col < 4; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = `puzzle-cell ${puzzleData[row][col] === 0 ? 'empty' : ''}`;
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.textContent = puzzleData[row][col] === 0 ? '' : puzzleData[row][col];
+                    
+                    // 绑定点击事件（非空白格且非移动中）
+                    if (puzzleData[row][col] !== 0) {
+                        cell.addEventListener('click', () => {
+                            if (!isMoving) moveCell(row, col);
+                        });
+                    }
+                    
+                    gridContainer.appendChild(cell);
+                }
+            }
+
+            // 更新步数显示
+            document.getElementById('stepCount').textContent = stepCount;
+        }
+
+        // 移动滑块（玩家操作）
+        function moveCell(row, col) {
+            // 检查是否与空白格相邻
+            const isAdjacent = 
+                (row === emptyPos.row && Math.abs(col - emptyPos.col) === 1) ||
+                (col === emptyPos.col && Math.abs(row - emptyPos.row) === 1);
+            
+            if (!isAdjacent) {
+                document.getElementById('result').textContent = '只能移动空白格相邻的滑块';
+                return;
+            }
+
+            // 标记为移动中，防止重复点击
+            isMoving = true;
+            
+            // 获取被点击的单元格元素，添加动画
+            const cellElement = document.querySelector(`.puzzle-cell[data-row="${row}"][data-col="${col}"]`);
+            cellElement.classList.add('move');
+
+            // 交换数据
+            [puzzleData[emptyPos.row][emptyPos.col], puzzleData[row][col]] = 
+            [puzzleData[row][col], puzzleData[emptyPos.row][emptyPos.col]];
+            
+            // 更新空白格位置
+            const oldEmptyRow = emptyPos.row;
+            const oldEmptyCol = emptyPos.col;
+            emptyPos = { row, col };
+
+            // 增加步数
+            stepCount++;
+            
+            // 重新渲染（动画结束后移除标记）
+            setTimeout(() => {
+                renderPuzzleGrid();
+                isMoving = false;
+            }, 150);
+
+            // 清空提示
+            document.getElementById('result').textContent = '';
+
+            // 检查是否完成
+            if (checkSolved()) {
+                clearInterval(timerInterval);
+                const timeUsed = 60 - remainingSeconds;
+                const score = !isTimeOut ? 3 : 2;
+                
+                // 填充通关信息
+                document.getElementById('passName').textContent = `玩家：${playerName}`;
+                document.getElementById('passStudentId').textContent = `学号：${studentId}`;
+                document.getElementById('passTimeUsed').textContent = `通关用时：${timeUsed}秒`;
+                document.getElementById('passStepCount').textContent = `移动步数：${stepCount}步`;
+                document.getElementById('passScore').textContent = `获得积分：${score}分`;
+                
+                // 延迟跳转，让玩家看到最后一步动画
+                setTimeout(() => {
+                    switchPage('passPage');
+                }, 200);
+            }
+        }
+
+        // 切换页面
+        function switchPage(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        // 重置游戏状态
+        function resetGame() {
+            // 生成可解的布局
+            generateSolvablePuzzle();
+            // 重置步数
+            stepCount = 0;
+            // 重新渲染网格
+            renderPuzzleGrid();
+            // 重启计时器
+            startTimer();
+            // 清空提示
+            document.getElementById('result').textContent = '';
+            isMoving = false;
+        }
+
+        // 初始化游戏
+        function initGame() {
+            resetGame();
+        }
+
+        // 页面加载完成初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 登录按钮事件
+            document.getElementById('startGameBtn').addEventListener('click', () => {
+                const name = document.getElementById('name').value.trim();
+                const id = document.getElementById('studentId').value.trim();
+                if (!name || !id) {
+                    alert('请输入姓名和学号');
+                    return;
+                }
+                playerName = name;
+                studentId = id;
+                initGame();
+                switchPage('gamePage');
+            });
+
+            // 重新开始按钮事件
+            document.getElementById('restartPuzzleBtn').addEventListener('click', resetGame);
+
+            // 返回登录按钮事件
+            document.getElementById('backToLoginBtn').addEventListener('click', () => {
+                clearInterval(timerInterval);
+                document.getElementById('name').value = '';
+                document.getElementById('studentId').value = '';
+                switchPage('loginPage');
+            });
+
+            // 重新挑战按钮事件
+            document.getElementById('restartBtn').addEventListener('click', () => {
+                resetGame();
+                switchPage('gamePage');
+            });
+
+            // 通关页返回登录按钮事件
+            document.getElementById('passBackToLoginBtn').addEventListener('click', () => {
+                document.getElementById('name').value = '';
+                document.getElementById('studentId').value = '';
+                switchPage('loginPage');
+            });
+        });
+    </script>
+</body>
+</html>

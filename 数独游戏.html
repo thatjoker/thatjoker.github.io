@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>九章算术社·数独游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        h1, h2 {
+            text-align: center;
+            margin: 10px 0 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        .rules {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .timer {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: red;
+            margin: 10px 0;
+        }
+        .result {
+            text-align: center;
+            font-size: 16px;
+            color: red;
+            margin: 10px 0;
+        }
+
+        /* 数独棋盘 */
+        .sudoku {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #222;
+            padding: 2px;
+            margin: 0 auto 20px;
+            max-width: 320px;
+        }
+        .sudoku a {
+            display: block;
+            aspect-ratio: 1/1;
+            background: white;
+            text-align: center;
+            line-height: 32px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .sudoku a.fixed {
+            background: #e6f3ff;
+            color: #0066cc;
+        }
+        .sudoku a.selected {
+            border: 2px solid #3498db;
+        }
+        .sudoku a.error {
+            background: #ffeaea;
+        }
+
+        /* 数字键盘 */
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 6px;
+            max-width: 240px;
+            margin: 0 auto 20px;
+        }
+        .keypad a {
+            padding: 10px 0;
+            background: white;
+            border: 1px solid #3498db;
+            text-align: center;
+            border-radius: 6px;
+        }
+        .keypad a.clear {
+            grid-column: span 3;
+            background: #ff5555;
+            color: white;
+            border-color: #ff5555;
+        }
+
+        .pass {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .pass .score {
+            font-size: 24px;
+            color: red;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- 登录页 -->
+    <div id="pageLogin" class="page active">
+        <h1>9×9数独挑战</h1>
+        <div class="form-group">
+            <label>姓名</label>
+            <input id="name" placeholder="请输入姓名">
+        </div>
+        <div class="form-group">
+            <label>学号</label>
+            <input id="xuehao" placeholder="请输入学号">
+        </div>
+        <a class="btn" onclick="startGame()">开始游戏</a>
+    </div>
+
+    <!-- 游戏页 -->
+    <div id="pageGame" class="page">
+        <h2>数独游戏</h2>
+        <div class="rules">
+            <li>每行、每列、每个3×3九宫格 1‑9 不重复</li>
+            <li>10分钟内正确完成：5分</li>
+            <li>超时正确完成：3分</li>
+        </div>
+        <div class="timer" id="timer">剩余时间：10:00</div>
+        
+        <div class="sudoku" id="sudoku"></div>
+        
+        <div class="keypad">
+            <a onclick="num(1)">1</a>
+            <a onclick="num(2)">2</a>
+            <a onclick="num(3)">3</a>
+            <a onclick="num(4)">4</a>
+            <a onclick="num(5)">5</a>
+            <a onclick="num(6)">6</a>
+            <a onclick="num(7)">7</a>
+            <a onclick="num(8)">8</a>
+            <a onclick="num(9)">9</a>
+            <a class="clear" onclick="clearCell()">清空</a>
+        </div>
+
+        <div class="result" id="msg"></div>
+        <a class="btn" onclick="check()">提交答案</a>
+        <a class="btn" onclick="reset()">重新开始</a>
+    </div>
+
+    <!-- 通关页 -->
+    <div id="pagePass" class="page">
+        <div class="pass">
+            <h2>恭喜通关！</h2>
+            <p id="info1"></p>
+            <p id="info2"></p>
+            <p id="info3"></p>
+            <div class="score" id="score"></div>
+            <p>请截图保存</p>
+        </div>
+        <a class="btn" onclick="goLogin()">返回</a>
+    </div>
+
+</div>
+
+<script>
+let board = [];
+let fix = [];
+let selR = -1, selC = -1;
+let timer;
+let left = 600;
+let timeout = false;
+let name, xuehao;
+
+function $(id) { return document.getElementById(id); }
+
+function show(p) {
+    $('pageLogin').classList.remove('active');
+    $('pageGame').classList.remove('active');
+    $('pagePass').classList.remove('active');
+    $(p).classList.add('active');
+}
+
+function startGame() {
+    name = $('name').value.trim();
+    xuehao = $('xuehao').value.trim();
+    if (!name || !xuehao) { alert('请填写姓名和学号'); return; }
+    reset();
+    show('pageGame');
+}
+
+// 固定可解数独题目
+function newPuzzle() {
+    const raw = [
+        [5,3,0,0,7,0,0,0,0],
+        [6,0,0,1,9,5,0,0,0],
+        [0,9,8,0,0,0,0,6,0],
+        [8,0,0,0,6,0,0,0,3],
+        [4,0,0,8,0,3,0,0,1],
+        [7,0,0,0,2,0,0,0,6],
+        [0,6,0,0,0,0,2,8,0],
+        [0,0,0,4,1,9,0,0,5],
+        [0,0,0,0,8,0,0,7,9]
+    ];
+    board = [];
+    fix = [];
+    for (let r=0;r<9;r++) {
+        board[r] = [...raw[r]];
+        fix[r] = raw[r].map(x=>x!==0);
+    }
+}
+
+function draw() {
+    let h = '';
+    for (let r=0;r<9;r++) {
+        for (let c=0;c<9;c++) {
+            const v = board[r][c];
+            const cls = [];
+            if (fix[r][c]) cls.push('fixed');
+            if (r===selR && c===selC) cls.push('selected');
+            h += `<a class="${cls.join(' ')}" onclick="select(${r},${c})">${v||''}</a>`;
+        }
+    }
+    $('sudoku').innerHTML = h;
+}
+
+function select(r,c) {
+    if (fix[r][c]) return;
+    selR = r; selC = c;
+    draw();
+}
+
+function num(n) {
+    if (selR===-1 || selC===-1) { msg('请先点击格子'); return; }
+    if (fix[selR][selC]) return;
+    if (can(selR, selC, n)) {
+        board[selR][selC] = n;
+        selR = selC = -1;
+        draw();
+        msg('');
+    } else {
+        msg('数字不合法（行/列/九宫格重复）');
+    }
+}
+
+function clearCell() {
+    if (selR===-1 || selC===-1) return;
+    if (fix[selR][selC]) return;
+    board[selR][selC] = 0;
+    selR = selC = -1;
+    draw();
+    msg('');
+}
+
+// 核心：判断能不能填
+function can(r,c,n) {
+    for (let i=0;i<9;i++) if (board[r][i]===n) return false;
+    for (let i=0;i<9;i++) if (board[i][c]===n) return false;
+    const br = Math.floor(r/3)*3;
+    const bc = Math.floor(c/3)*3;
+    for (let i=0;i<3;i++)
+        for (let j=0;j<3;j++)
+            if (board[br+i][bc+j]===n) return false;
+    return true;
+}
+
+function check() {
+    for (let r=0;r<9;r++)
+        for (let c=0;c<9;c++)
+            if (board[r][c]===0) { msg('数独未填完'); return; }
+
+    for (let r=0;r<9;r++)
+        for (let c=0;c<9;c++) {
+            const v = board[r][c];
+            board[r][c] = 0;
+            const ok = can(r,c,v);
+            board[r][c] = v;
+            if (!ok) { msg(`第${r+1}行${c+1}列错误`); return; }
+        }
+
+    clearInterval(timer);
+    const s = timeout ? 3 : 5;
+    $('info1').innerText = `姓名：${name}`;
+    $('info2').innerText = `学号：${xuehao}`;
+    $('info3').innerText = `用时：${((600-left)/60).toFixed(0)}分${(600-left)%60}秒`;
+    $('score').innerText = `得分：${s}分`;
+    show('pagePass');
+}
+
+function msg(s) { $('msg').innerText = s; }
+
+function timerFunc() {
+    left--;
+    const m = String(Math.floor(left/60)).padStart(2,'0');
+    const s = String(left%60).padStart(2,'0');
+    $('timer').innerText = `剩余时间：${m}:${s}`;
+    if (left<=0) {
+        clearInterval(timer);
+        timeout = true;
+        msg('已超时，正确完成得3分');
+    }
+}
+
+function reset() {
+    clearInterval(timer);
+    newPuzzle();
+    selR = selC = -1;
+    left = 600;
+    timeout = false;
+    draw();
+    msg('');
+    timer = setInterval(timerFunc,1000);
+}
+
+function goLogin() {
+    clearInterval(timer);
+    show('pageLogin');
+}
+</script>
+</body>
+</html>
